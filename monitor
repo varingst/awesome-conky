@@ -1,0 +1,51 @@
+#!/usr/bin/env lua
+if arg[1] == "debug" then
+    rawset(_G, "CONKY_DEBUG", true)
+end
+
+local CONST = require("common-constants")
+
+local function expr_signal(string)
+    return "\"type='signal'," .. string .. "\""
+end
+
+local function expr_sender(sender, rest)
+    local str = "sender='" .. sender  .. "'"
+    if rest then str = str .. "," .. rest end
+
+    return expr_signal(str)
+end
+
+local function signal_from_dbus(name)
+    return expr_sender("org.freedesktop.DBus", "member=" .. name)
+end
+
+local function awk_var(name)
+    return "-v " .. name .. "='" .. CONST(name:upper()) .. "'"
+end
+
+local mon = table.concat({
+    "dbus-monitor",
+    expr_sender(CONST("CONKY_NAME")),
+    expr_sender(CONST("AWESOME_NAME")),
+    signal_from_dbus("NameAcquired"),
+}, " ")
+
+local awk = table.concat({
+    "awk -f monitor-filter.awk",
+    awk_var("conky_name"),
+    awk_var("awesome_name"),
+    awk_var("string_for_conky"),
+    awk_var("update_for_widget"),
+}, " ")
+
+local cmd = mon .. " | " .. awk
+
+-- luacheck: globals CONKY_DEBUG
+if CONKY_DEBUG then
+    print("running with command:")
+    print(cmd)
+end
+
+os.execute(cmd)
+

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+rundir=$(dirname $(realpath "$0"))
+
+export LUA_PATH="$rundir/?.lua;$HOME/.conky/?.lua;$LUA_PATH"
+
+conky "$@" >/dev/null 2>&1
+
