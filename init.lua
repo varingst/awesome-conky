@@ -80,16 +80,6 @@ local const = require("conky/common-constants")
 
 local dbus = dbus
 
-
-
---local load = loadstring or load
---local tostring = tostring
---local ipairs = ipairs
---local table = table
---local unpack = unpack or table.unpack
---local type = type
-
-
 local widget = {}  -- for the window that awesome draws
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
@@ -101,12 +91,10 @@ conky.rule = { rule = { class = "Conky" },
                properties = {
                  floating = true,
                  sticky = true,
-                 ontop = true,
+                 ontop = false,
+                 skip_taskbar = true,
+                 below = true,
                  focusable = false,
-                 x = 0,
-                 y = 20,
-                 width = 1050,
-                 height = 510
                },
              }
 
@@ -163,7 +151,10 @@ function public.toggle_key(key, mod)  -- {{{2
            { description = "toggle conky window on top", group = "conky" })
 end
 
-function public.rule()  -- {{{2
+function public.rule(t)  -- {{{2
+    for prop, value in pairs(t or {}) do
+        conky.rule.properties[prop] = value
+    end
     return conky.rule
 end
 
@@ -317,7 +308,7 @@ function window.spawn() -- {{{2
                 true, -- keep startup notifications
                 updater.send_string)
 end
-awesome.connect_signal("started",
+awesome.connect_signal("startup",
                        function()
                            return window.client().valid or window.spawn()
                        end)
