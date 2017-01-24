@@ -153,12 +153,14 @@ end
 
 function public.show_key(key, mod) -- {{{2
     -- sets the key to hold for the conky window to be visible
-    return awful.key(mod or {}, key, window.raise, window.lower_delayed)
+    return awful.key(mod or {}, key, window.raise, window.lower_delayed,
+           { description = "conky window on top while held", group = "conky" })
 end
 
 function public.toggle_key(key, mod)  -- {{{2
     -- sets the key to press to toggle the conky window visibility
-    return awful.key(mod or {}, key, window.toggle)
+    return awful.key(mod or {}, key, window.toggle,
+           { description = "toggle conky window on top", group = "conky" })
 end
 
 function public.rule()  -- {{{2
@@ -285,15 +287,18 @@ end
 -- WINDOW -- {{{1
 function window.toggle() -- {{{2
     local c = window.client()
-    c.minimized = not c.minimized
+    c.below = not c.below
+    c.ontop = not c.ontop
 end
 
 function window.raise() -- {{{2
-    window.client().minimized = false
+    window.client().below = false
+    window.client().ontop = true
 end
 
 function window.lower() -- {{{2
-    window.client().minimized = true
+    window.client().ontop = false
+    window.client().below = true
 end
 
 -- function window.lower_auto() -- {{{2
