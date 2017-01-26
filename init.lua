@@ -158,7 +158,6 @@ function public.rule(t)  -- {{{2
     return conky.rule
 end
 
-
 -- WIDGET -- {{{1
 function widget.conkybox_for(raw) -- {{{2
     local layout = wibox.layout.fixed.horizontal()

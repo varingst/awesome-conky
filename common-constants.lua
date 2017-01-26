@@ -13,7 +13,6 @@ local HOME = os.getenv("HOME")
 
 local constants = {
     CONKY_LAUNCH          = HOME .. "/.config/awesome/conky/launch",
-    CONKYRC               = HOME .. "/.conkyrc",
     DELIMITER             = "", -- <C-D>
     DBUS_PATH             = "/",
     CONKY_NAME            = CONKY_NAME,
