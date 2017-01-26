@@ -1,0 +1,7 @@
+* Write README.md
+* Refactor the property cascading
+* Better error handing in dbus-common
+* Clean up/out the debug utils
+* Tests
+  * LuaCov
+  * Whatever testing awesome uses
