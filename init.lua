@@ -207,7 +207,7 @@ function widget.inherit_properties(child, parent) -- {{{2
     end
 end
 
-function widget.apply_properties(raw, w, wtype)
+function widget.apply_properties(raw, w, wtype) -- {{{2
     local props = {}
     for prop, value in pairs(raw) do
         if type(prop) == "number" or
@@ -232,14 +232,6 @@ function widget.apply_properties(raw, w, wtype)
     end
 end
 
-function widget.set_width(wb, width) -- {{{2
-    -- forces a minimum with, if provided
-    if (width or 0) <= 0 then
-        return wb
-    else
-        return wibox.container.constraint(wb, "min", width)
-    end
-end
 
 function widget.maybe_require(t_or_str) -- {{{2
     if type(t_or_str) == "string" then
