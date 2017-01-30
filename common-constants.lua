@@ -4,15 +4,20 @@ local COMMON_NAME = "org.awesomewm"
 local CONKY_NAME = COMMON_NAME .. ".conky"
 local AWESOME_NAME = COMMON_NAME .. ".awful"
 
+local HOME = os.getenv("HOME")
+
+-- TODO: make this a bit for flexible
+local CONKY_LAUNCH = HOME .. "/.config/awesome/conky/conky-awesome-launch"
+
 if CONKY_DEBUG then
-    AWESOME_NAME = "org.test.awesomewm.awful"
+    CONKY_NAME = "org.awesomewm.test.conky"
+    CONKY_LAUNCH = CONKY_LAUNCH .. " --debug"
 end
 
 -- todo: make this an option
-local HOME = os.getenv("HOME")
 
 local constants = {
-    CONKY_LAUNCH          = HOME .. "/.config/awesome/conky/conky-awesome-launch",
+    CONKY_LAUNCH          = CONKY_LAUNCH,
     DELIMITER             = "", -- <C-D>
     DBUS_PATH             = "/",
     CONKY_NAME            = CONKY_NAME,

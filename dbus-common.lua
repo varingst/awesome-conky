@@ -4,6 +4,8 @@ local ldbus = require("ldbus")
 local CONST = require("common-constants")
 local dbus = {}
 
+local fnoop = function() end
+
 -- TODO: some actual error handling
 
 function dbus.setup(name) -- {{{1
@@ -17,7 +19,9 @@ function dbus.setup(name) -- {{{1
   end
 
   local conn = assert(ldbus.bus.get("session"))
-  dbus.request_name(conn, name)
+  if not pcall(dbus.request_name(conn, name)) then
+      return fnoop, fnoop, fnoop
+  end
 
   if name == "conky" then
     return dbus.listener_for(conn, CONST("STRING_FOR_CONKY")),
@@ -32,6 +36,9 @@ end
 function dbus.listener_for(conn, signal_type) -- {{{1
   -- returns a function that checks if the specified signal has been emitted
   --local conn = conn
+  if CONKY_DEBUG then
+      print("setting up listener for signal: " .. signal_type)
+  end
   assert(ldbus.bus.add_match(conn,
                              "type='signal', interface='" .. signal_type .. "'"))
   return function()
@@ -51,6 +58,10 @@ function dbus.emitter_for(conn, signal_type, member) -- {{{1
   --local conn = conn
   --local signal_type = signal_type
   local last_message = nil
+
+  if CONKY_DEBUG then
+      print("setting up emitter on: " .. signal_type .. "." .. (member or CONST("MEMBER")))
+  end
 
   return function(message)
     if message == last_message then return end
@@ -74,11 +85,16 @@ end
 
 function dbus.request_name(conn, name) -- {{{1
   -- register our bus name with dbus
+  local busname = CONST(name:upper() .. "_NAME")
+  if CONKY_DEBUG then
+      print("requesting name: " .. busname)
+  end
+
   assert(assert(
     ldbus.bus.request_name(conn,
-                           CONST(name:upper() .. "_NAME"),
+                           busname,
                            { replace_existing = true }
-    ) == "primary_owner"
+    ) == "primary_owner", "Could not acquire " .. busname
   ), "Not Primary Owner")
 end
 

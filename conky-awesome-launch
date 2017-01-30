@@ -4,5 +4,11 @@ rundir=$(dirname $(realpath "$0"))
 
 export LUA_PATH="$rundir/?.lua;$HOME/.conky/?.lua;$LUA_PATH"
 
-conky "$@" >/dev/null 2>&1
+if [[ $1 == --debug ]]; then
+  export CONKY_DEBUG="true"
+  echo "${0##/*} running in debug mode"
+  shift
+fi
+
+conky "$@"
 

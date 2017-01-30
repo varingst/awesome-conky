@@ -74,6 +74,13 @@ local gears = require("gears")
 local wibox = require("wibox")
 awful.client = require("awful.client")
 
+local display = os.getenv("DISPLAY")
+if display ~= ":0" then
+    print("awesome-conky: Display is '" .. display ..
+          "', assuming Xephyr and running in debug mode")
+    rawset(_G, "CONKY_DEBUG", true)
+end
+
 local const = require("conky/common-constants")
 
 -- luacheck: ignore dbus awesome
