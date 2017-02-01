@@ -1,7 +1,8 @@
 # Conky widget for the Awesome WM
 
 Don't want your Window Manager to run around asking how the hardware is doing?
-Have Conky do it! conky-awesome talks to Conky over DBus.
+Have Conky do it!  
+conky-awesome talks to Conky over DBus.
 
 ## Requirements
 * awesome with dbus support
@@ -20,16 +21,16 @@ in rc.lua:
 
 Conky's own window defaults to being behind all others.
 
-Bind F12 to put the on top while the key is held.
+Bind F12 to put the on top while the key is held.  
 Bind modkey + F12 to toggle whether conky is on top or below all other windows.
-`
+```
 globalkeys = awful.util.table.join(
     awful.key( .....
     .....
     conky.show_key("F12"),
     conky.toggle_key("F12"), { modkey })
 )
-`
+```
 
 both functions have this signature:
 `_key(keystring, [ modifier table ])`
@@ -42,30 +43,26 @@ conky.rule({ ontop = false, below = true })
 
 ### Declaring the Conky Widget
 
-A Conky Widget consists of up to four *composed* widgets, and any number of
-child widgets.
-
 Minimal example, just declaring a string to be evaluated by conky:
-`
+```
 s.mywibox:setup {
   .....
   conky.widget({ conky = "CPU: ${cpu 0}% MEM: ${memperc}% GPU: ${hwmon 0 temp 1}" }),
   ....
 }
-`
+```
 
 #### Icons and labels
 
 Simple example with an icon and a text label:
-
-`
+```
 conky.widget({
     icon = "my_neat_cpu_icon.png",
     label = "CPU:",
     conky = "${cpu%}"
 })
 
-`
+```
 
 #### Child widgets
 
@@ -168,6 +165,13 @@ conky.widget({
 ```
 
 Now the CPU widget changes its background color to red if the load goes above 80%
+
+The updater function has the following signature:  
+`updater(conky_update, conky_wibox, icon_wibox, label_wibox)`
+
+`conky_update` is the string from conky, use that to make changes  
+`icon_wibox` is a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance  
+`conky_wibox` and `label_wibox` are instances of [wibox.widget.textbox](http://awesomewm.org/apidoc/classes/wibox.widget.textbox.html)
 
 Take a look at widgets/battery.lua for more
 
