@@ -19,9 +19,10 @@ function dbus.setup(name) -- {{{1
   end
 
   local conn = assert(ldbus.bus.get("session"))
-  if not pcall(dbus.request_name(conn, name)) then
-      return fnoop, fnoop, fnoop
-  end
+  --if not pcall(dbus.request_name(conn, name)) then
+      --return fnoop, fnoop, fnoop
+  --end
+  dbus.request_name(conn, name)
 
   if name == "conky" then
     return dbus.listener_for(conn, CONST("STRING_FOR_CONKY")),

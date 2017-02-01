@@ -87,7 +87,60 @@ local const = require("conky/common-constants")
 
 local dbus = dbus
 
-local widget = {}  -- for the window that awesome draws
+-- DATA STRUCTURES -- {{{2
+
+local function Set(t) -- {{{3
+    local set = {}
+    for _, value in pairs(t or {}) do
+        set[value] = true
+    end
+
+    return {
+        add = function(e)
+            set[e] = true
+        end,
+
+        delete = function(e)
+            set[e] = nil
+        end,
+
+        has = function(e)
+            return set[e]
+        end
+    }
+end
+
+local function Stack() -- {{{3
+    return (function()
+        local stack = {}
+        local head = 0
+        return {
+            head = function()
+                return stack[head]
+            end,
+
+            push = function(e)
+                head = head + 1
+                stack[head] = e
+            end,
+
+            pop = function()
+                if head == 0 then return nil end
+                local e = stack[head]
+                stack[head] = nil
+                head = head - 1
+                return e
+            end
+        }
+    end)()
+end
+
+-- MODULES -- {{{2
+
+local widget = {  -- for the window that awesome draws
+    COMPOSED = Set({ "conkybox", "iconbox", "labelbox", "background" }),
+    CONTENT  = Set({ "conky", "icon", "label", "updater" }),
+}
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
 local public = {}  -- public interface
@@ -105,11 +158,13 @@ conky.rule = { rule = { class = "Conky" },
                },
              }
 
+
 -- PUBLIC INTERFACE -- {{{1
 function public.widget(root) -- {{{2
     -- builds the widget from nested tables
-    local unprocessed = widget.Stack()
-    local processed   = widget.Stack()
+    local unprocessed = Stack()
+    local processed   = Stack()
+    local seen        = Set()
 
     unprocessed.push(widget.maybe_require(root))
 
@@ -121,8 +176,8 @@ function public.widget(root) -- {{{2
 
         -- not seen before, so mark, pass properties to children,
         -- and push children onto the unprocessed stack
-        elseif not raw_wibox[0] then
-            raw_wibox[0] = true
+        elseif not seen.has(raw_wibox) then
+            seen.add(raw_wibox)
             for _, nested in ipairs(raw_wibox) do
                 nested = widget.maybe_require(nested)
                 unprocessed.push(nested)
@@ -132,7 +187,7 @@ function public.widget(root) -- {{{2
         -- seen before, so all children are on the processed stack
         else
             -- make wibox and wrap in layout
-            local layout = widget.conkybox_for(raw_wibox)
+            local layout = widget.make(raw_wibox)
             for _, _ in ipairs(raw_wibox) do
                 layout:add(processed.pop())
             end
@@ -166,7 +221,7 @@ function public.rule(t)  -- {{{2
 end
 
 -- WIDGET -- {{{1
-function widget.conkybox_for(raw) -- {{{2
+function widget.make(raw) -- {{{2
     local layout = wibox.layout.fixed.horizontal()
 
     local iconbox = nil
@@ -183,27 +238,36 @@ function widget.conkybox_for(raw) -- {{{2
         layout:add(labelbox)
     end
 
+    local background = nil
+    if raw.background then
+        background = wibox.container.background(layout)
+        widget.apply_properties(raw, background, "background")
+    end
+
     if raw.conky then
         local conkybox = wibox.widget.textbox("")
         widget.apply_properties(raw, conkybox, "conkybox")
         layout:add(conkybox)
 
         updater.add_string(raw.conky)
-        updater.add(conkybox, iconbox, labelbox, raw.updater)
+        updater.add(conkybox, iconbox, labelbox, background, raw.updater)
     end
 
-    return layout
+    if raw.background then
+        return wibox.layout.fixed.horizontal(background)
+    else
+        return layout
+    end
 end
 
 function widget.inherit_properties(child, parent) -- {{{2
     for prop, value in pairs(parent) do
         -- assume all number keys are list items/nested widgets
-        if type(prop) == "number" then
+        if type(prop) == "number" or widget.CONTENT.has(prop) then
             repeat until true -- noop/continue
-        elseif prop == "conkybox" or
-               prop == "labelbox" or
-               prop == "iconbox"
-            then if child[prop] then
+        -- parent supplies a table of properties for a composed widget
+        elseif widget.COMPOSED.has(prop) then
+            if child[prop] then
                 widget.inherit_properties(child[prop], value)
             else
                 child[prop] = value
@@ -214,23 +278,23 @@ function widget.inherit_properties(child, parent) -- {{{2
     end
 end
 
-function widget.apply_properties(raw, w, wtype)
+function widget.apply_properties(raw, w, wtype) -- {{{2
+    -- applies the properties in the raw table to the widget w
     local props = {}
     for prop, value in pairs(raw) do
+        -- skip they keys that we know are not widget properties
         if type(prop) == "number" or
-           prop == "conkybox" or
-           prop == "labelbox" or
-           prop == "iconbox" or
-           prop == "label" or
-           prop == "conky" or
-           prop == "updater" or
-           prop == "icon" then repeat until true
+           widget.COMPOSED.has(prop) or
+           widget.CONTENT.has(prop) then
+            repeat until true
         else
+            -- collect the common properties
             props[prop] = value
         end
     end
 
     for prop, value in pairs(raw[wtype] or {}) do
+        -- collect properties specific to a composed widget
         props[prop] = value
     end
 
@@ -254,32 +318,6 @@ function widget.maybe_require(t_or_str) -- {{{2
     end
     return t_or_str
 end
-
-function widget.Stack() -- {{{2
-    return (function()
-        local stack = {}
-        local head = 0
-        return {
-            head = function()
-                return stack[head]
-            end,
-
-            push = function(e)
-                head = head + 1
-                stack[head] = e
-            end,
-
-            pop = function()
-                if head == 0 then return nil end
-                local e = stack[head]
-                stack[head] = nil
-                head = head - 1
-                return e
-            end
-        }
-    end)()
-end
-
 
 -- WINDOW -- {{{1
 function window.toggle() -- {{{2
@@ -371,21 +409,22 @@ function updater.send_string() -- {{{2
                      "string", updater.string)
 end
 
-function updater.add(conkybox, iconbox, labelbox, func) -- {{{2
+function updater.add(conkybox, iconbox, labelbox, background, func) -- {{{2
     -- make an updater function and add to the list
     table.insert(updater, (function()
         -- luacheck: ignore
         local conkybox = conkybox
         local iconbox = iconbox
         local labelbox = labelbox
-        local func = func or    function(result, conky, icon, label)
+        local background = background
+        local func = func or    function(result, conky, icon, label, background)
                                     conky:set_text(result)
                                 end
         local last_update = nil
 
         return function(conky_result)
             if conky_result == last_update then return end
-            func(conky_result, conkybox, iconbox, labelbox)
+            func(conky_result, conkybox, iconbox, labelbox, background)
             last_update = conky_result
         end
         -- luacheck: ignore
