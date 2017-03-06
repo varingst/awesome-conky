@@ -1,85 +1,8 @@
--- USAGE -- {{{1
--- A conky widget is:
--- {
---     icon  = <string>: image filename
---     label = <string>: plaintext
---     conky = <string>: to call conky_parse() on
---     updater = <function>: gets passed the result from conky, and the wiboxes
---                           for conky, icon, and label, in that order
---
---    <list> of nested conky widget declarations
---           OR other wiboxes
--- }
---
--- s.myconky = conky.widget:setup {
---    {
---      icon = "cpu",
---      conky = "${cpu%}",
---      width = 30,        -- minimum width for conky text field
---      {
---          -- nested widgets
---          { conky = "$cpu1%" },
---          { conky = "$cpu2%" },
---          { conky = "$cpu3%" },
---          { conky = "$cpu4%" },
---          cat_litter_box_status_widget,   -- include other wiboxes
---      }
---    },
---    {
---      label = "RAM",
---      conky = "$memperc%",
---    },
---    {
---      label = "↑",
---      label_width = 12,           -- minimum width for label
---      conky = "${upspeed eth0}",
---    },
---    {
---      label = "↓",
---      label_width = 12,
---      conky = "${downspeed eth0}",
---    },
---    {
---      icon = "resting_bear.png"       -- widget consisting of only an icon
---      conky = "$cpu%"
---      updater = (function()                     -- supply an updater function
---          local still = "resting_bear.png"      -- to do ... whatever, really
---          local current_frame = 1
---          local frames = {
---              "dancing_bear_01.png",
---              "dancing_bear_02.png",
---              "dancing_bear_03.png",
---              "dancing_bear_04.png",
---              "dancing_bear_05.png",
---          }
---          return function(conky_update, conky_wibox, icon_wibox, label_wibox)
---              local cpu = tonumber(string.sub(conky_update, 1, -2))
---              if cpu < 40 then
---                  icon_wibox:set_image(still)
---              else
---                  icon_wibox:set_image(frames[current_frame])
---                  current_frame = current_frame + 1
---                  if current_frame > 5 then current_frame = 1 end
---              end
---          end
---      end)()
---    }
--- }
-
--- TODO: add props to match out client specifically
-
 -- INIT -- {{{1
 local awful = require("awful")
 local gears = require("gears")
 local wibox = require("wibox")
 awful.client = require("awful.client")
-
-local display = os.getenv("DISPLAY")
-if display ~= ":0" then
-    print("awesome-conky: Display is '" .. display ..
-          "', assuming Xephyr and running in debug mode")
-    rawset(_G, "CONKY_DEBUG", true)
-end
 
 local const = require("conky/common-constants")
 
@@ -278,7 +201,7 @@ function widget.apply_properties(raw, w, wtype) -- {{{2
     -- applies the properties in the raw table to the widget w
     local props = {}
     for prop, value in pairs(raw) do
-        -- skip they keys that we know are not widget properties
+        -- skip the keys that we know are not widget properties
         if type(prop) == "number" or
            widget.COMPOSED.has(prop) or
            widget.CONTENT.has(prop) then
@@ -387,13 +310,15 @@ if dbus then
 
             return function(data, conky_update)
                 if data.member == widget_update then
+                    -- conky sent a string
 
-                                     -- lua "split string"
+                                            -- lua "split string"
                     local from_conky_iter = string.gmatch(conky_update, all_but_delim)
                     for _,update_func in ipairs(updater) do
                         update_func(from_conky_iter())
                     end
                 elseif data.member == need_string then
+                    -- conky is running but doesn't know what to send
                     updater.send_string()
                 end
             end
@@ -430,7 +355,6 @@ function updater.add(conkybox, iconbox, labelbox, background, func) -- {{{2
             func(conky_result, conkybox, iconbox, labelbox, background)
             last_update = conky_result
         end
-        -- luacheck: ignore
     end)())
 end
 
