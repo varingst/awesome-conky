@@ -111,28 +111,26 @@ local function Set(t) -- {{{3
 end
 
 local function Stack() -- {{{3
-    return (function()
-        local stack = {}
-        local head = 0
-        return {
-            head = function()
-                return stack[head]
-            end,
+    local stack = {}
+    local head = 0
+    return {
+        head = function()
+            return stack[head]
+        end,
 
-            push = function(e)
-                head = head + 1
-                stack[head] = e
-            end,
+        push = function(e)
+            head = head + 1
+            stack[head] = e
+        end,
 
-            pop = function()
-                if head == 0 then return nil end
-                local e = stack[head]
-                stack[head] = nil
-                head = head - 1
-                return e
-            end
-        }
-    end)()
+        pop = function()
+            if head == 0 then return nil end
+            local e = stack[head]
+            stack[head] = nil
+            head = head - 1
+            return e
+        end
+    }
 end
 
 -- MODULES -- {{{2
