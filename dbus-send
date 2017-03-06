@@ -12,7 +12,7 @@ print(arg[1])
 
 local emit, _
 if arg[1] == "as-conky" then
-    _, emit = dbus("conky")
+    _, emit, _ = dbus("conky")
 elseif arg[1] == "as-awesome" then
     _, emit = dbus("awesome")
 else
