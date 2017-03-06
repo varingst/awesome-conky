@@ -137,7 +137,7 @@ end
 
 -- MODULES -- {{{2
 
-local widget = {  -- for the window that awesome draws
+local widget = {  -- for the widget that awesome draws
     COMPOSED = Set({ "conkybox", "iconbox", "labelbox", "background" }),
     CONTENT  = Set({ "conky", "icon", "label", "updater" }),
 }
@@ -146,17 +146,15 @@ local window = {}  -- for conky's own window
 local public = {}  -- public interface
 
 
-local conky = {}
-conky.rule = { rule = { class = "Conky" },
-               properties = {
-                 floating = true,
-                 sticky = true,
-                 ontop = false,
-                 skip_taskbar = true,
-                 below = true,
-                 focusable = false,
-               },
-             }
+-- default conky client properties
+local properties = {
+    floating = true,
+    sticky = true,
+    ontop = false,
+    skip_taskbar = true,
+    below = true,
+    focusable = false,
+}
 
 
 -- PUBLIC INTERFACE -- {{{1
@@ -213,12 +211,12 @@ function public.toggle_key(key, mod)  -- {{{2
            { description = "toggle conky window on top", group = "conky" })
 end
 
-function public.rule(t)  -- {{{2
-    for prop, value in pairs(t or {}) do
-        conky.rule.properties[prop] = value
+function public.properties(t)  -- {{{2
+    for prop, value in pairs(t) do
+        properties[prop] = value
     end
-    return conky.rule
 end
+
 
 -- WIDGET -- {{{1
 function widget.make(raw) -- {{{2
@@ -316,16 +314,27 @@ function window.toggle() -- {{{2
     local c = window.client()
     c.below = not c.below
     c.ontop = not c.ontop
+    if c.ontop and public.raise then
+        public.raise(c)
+    elseif c.below and public.lower then
+        public.lower(c)
+    end
 end
 
 function window.raise() -- {{{2
-    window.client().below = false
-    window.client().ontop = true
+    local c = window.client()
+    c.below = false
+    c.ontop = true
+    if public.raise == nil then return end
+    public.raise(c)
 end
 
 function window.lower() -- {{{2
-    window.client().ontop = false
-    window.client().below = true
+    local c = window.client()
+    c.ontop = false
+    c.below = true
+    if public.lower == nil then return end
+    public.lower(c)
 end
 
 -- function window.lower_auto() -- {{{2
@@ -339,20 +348,24 @@ function window.lower_delayed() -- {{{2
     window.timer:again()
 end
 
-function window.spawn() -- {{{2
-    awful.spawn(const("CONKY_LAUNCH"),
-                true, -- keep startup notifications
-                updater.send_string)
-end
+-- conky client autostart {{{2
 awesome.connect_signal("startup",
                        function()
-                           return window.client().valid or window.spawn()
+                           if not window.client().valid then
+                               window.spawn()
+                           end
                        end)
+
+function window.spawn() -- {{{2
+    awful.spawn(const("CONKY_LAUNCH"),
+                properties,
+                updater.send_string)
+end
 
 function window.client() -- {{{2
     -- finds and returns the client object
     if window.c and window.c.valid then
-    return window.c
+        return window.c
     end
 
     window.c = awful.client.iterate(function(c)
