@@ -1,8 +1,6 @@
-# Conky widget for the Awesome WM
+# Conky widget for Awesome WM
 
-Don't want your Window Manager to run around asking how the hardware is doing?
-Have Conky do it!  
-conky-awesome talks to Conky over DBus.
+conky-awesome lets you make widgets displaying system information from [conky](https://github.com/brndnmtthws/conky)
 
 ## Requirements
 * awesome with dbus support
@@ -13,37 +11,81 @@ conky-awesome talks to Conky over DBus.
 Clone this repo to ~/.config/awesome/conky
 
 ## Configuration
-in rc.lua:
 
-`local conky = require("conky")`
+### conkyrc
 
-### Binding keys for Conky's own window
+```
+conky.config = {
+    .....
+    lua_load = "~/.config/awesome/conky/conky-dbus.lua",
+    lua_draw_hook_pre = "conky_update_awesome",
+}
+```
 
-Conky's own window defaults to being behind all others.
+### rc.lua
 
-Bind F12 to put the on top while the key is held.  
-Bind modkey + F12 to toggle whether conky is on top or below all other windows.
+```
+local conky = require("conky")
+```
+
+This is all that is required to have conky start at launch.
+Restarting awesome will not spawn additional conky clients.
+
+#### Keybindings
+
+The conky client's own window defaults to being behind all others.
+
+Bind keys for raising the client window.
+
 ```
 globalkeys = awful.util.table.join(
     awful.key( .....
     .....
-    conky.show_key("F12"),
-    conky.toggle_key("F12"), { modkey })
+    conky.show_key("F12"),                -- conky window on top while held
+    conky.toggle_key("F12"), { modkey })  -- toggle conky on top
 )
 ```
+Both functions have this signature:
+`(keystring, [ modifier table ])`
 
-both functions have this signature:
-`_key(keystring, [ modifier table ])`
+#### Client Window Properties
 
-### Specifying additional properties for Conky's own window
+You can provide a table of properties for the client window, and functions
+to apply when the window is raised and lowered
 
-`
-conky.rule({ ontop = false, below = true })
-`
+```
+conky.properties({ opacity = 0.4 })
+conky.raise = function(c) c.opacity = 1.0 end
+conky.lower = function(c) c.opacity = 0.4 end
+````
 
-### Declaring the Conky Widget
+## Conky Widgets
 
-Minimal example, just declaring a string to be evaluated by conky:
+Conky widget declaration:
+```
+{
+  icon       = <string>,     -- image filename
+  label      = <string>,     -- a static textbox
+  conky      = <string>,     -- the string conky evaluates with conky_parse()
+  background = <table>,      -- background properties table
+  updater    = <function>,   -- custom updater function
+  {                          -- list of any number of:
+    <conky declaration>,     -- nested conky widget declarations
+    <canned conky widget>,   -- premade widgets from .config/awesome/conky/widgets
+    <any widget>,            -- if you want other widgets in-between conky widgets
+  }
+}
+```
+
+A conky widget consists of up to four subwidgets, all optional:
+  - `icon` declares a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance
+  - `label` declares a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance
+  - `conky` declares a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance
+  - `background` declares a [wibox.container.background](http://awesomewm.org/apidoc/classes/wibox.container.background.html) instance
+
+### A minimal widget
+
+Simply declaring a string to be evaluated by conky:
 ```
 s.mywibox:setup {
   .....
@@ -52,7 +94,7 @@ s.mywibox:setup {
 }
 ```
 
-#### Icons and labels
+### Icons and labels
 
 Simple example with an icon and a text label:
 ```
@@ -64,22 +106,23 @@ conky.widget({
 
 ```
 
-#### Child widgets
+### Child widgets
 
-Any number of child widgets can be declared, and will be layed out right of its
-parent, going left to right:
+Any number of child widgets can be declared, and will be layed out to the right
+of its parent.
+Child widgets inherit properties from their parents.
 
 ```
 conky.widget({
     font = "My Neat Font",
     label = "CPU:",
     conky = "${cpu temp},
-    { -- child widget 1
+    { -- child widget 1        -- Inherits "My Neat Font"
       label = "Core 1:",
       { conky = "${cpu0}" },   -- grandchild widget 1
       { conky = "${cpu1}" },   -- grandchild widget 2
     },
-    { -- child widget 2
+    { -- child widget 2        -- Inherits "My Neat Font"
       label = "Core 2:",
       { conky = "${cpu2}" },   -- grandchild widget 3
       { conky = "${cpu3}" },   -- grandchild widget 4
@@ -93,36 +136,31 @@ conky.widget({
 })
 ```
 
-Child widgets inherit properties from their parents, 'font' will here apply
-to all CPU child widgets, but is overridden for the RAM widget.
+### Subwidgets
 
-#### Composed widgets
-
-The Conky Widget is composed of
-  * an `imagebox` for the icon
-  * a `textbox` for the label
-  * a `textbox` for the string sent from conky
-layed out left to right, on top of a `wibox.container.background`
-
-You can specify properties specifically for composed widgets:
+You can specify wibox properties individually for subwidgets:
 
 ```
 conky.widget({
   label = "CPU:",
   conky = "${cpu}",
+
   -- properties for background wibox
   background = { bg = "red" },
+
   -- properties for the label wibox
-  labelbox = { "Font for Label" },
+  labelbox = { font = "Font for Label" },
+
   -- properties for the conky wibox
   conkybox = { force_width = 30, align = "right" },
+
   -- properties for the icon wibox
   iconbox = { opacity = 0.8 },
 })
 ```
 
-Child widgets inherit composed widget properties from their parent, but can
-override.  
+Child widgets inherit subwidget properties from their parent.
+
 The GrandChild widget below aligns text left to right, has a 30px fixed width, and a
 black background:
 
@@ -142,17 +180,25 @@ conky.widget({
 })
 ```
 
-#### Updater Function
+### Updater Function
 
-The default widget merely sets the string returning from conky to the
-conkybox. For anything more involved a updater function can be supplied:
+The default widget jest sets the string returning from conky to the
+conkybox. To change the widget based on updates from conky, you can provide
+an updater function with the following signature:
+
+`function updater(conky_update, conky_wibox, icon_wibox, label_wibox, background)`
+
+Where `conky_update` is the update from conky, and the rest are the subwidget
+wiboxes.
+
+A CPU widget that changes it background color to red if the load goes above 80%:
 
 ```
 conky.widget({
     label = "CPU:",
     conky = "${cpu}",
     background = { bg = "grey" },
-    updater = function(conky_update, conky_wibox, icon_wibox, label_wibox, background)
+    updater = function(conky_update, conky_wibox, _, _, background)
       conky_wibox:set_text(conky_update)
 
       if tonumber(conky_update) > 80 then
@@ -164,38 +210,35 @@ conky.widget({
 })
 ```
 
-Now the CPU widget changes its background color to red if the load goes above 80%
-
-The updater function has the following signature:  
-`updater(conky_update, conky_wibox, icon_wibox, label_wibox)`
-
-`conky_update` is the string from conky, use that to make changes  
-`icon_wibox` is a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance  
-`conky_wibox` and `label_wibox` are instances of [wibox.widget.textbox](http://awesomewm.org/apidoc/classes/wibox.widget.textbox.html)
-
 Take a look at widgets/battery.lua for more
 
-#### Configuration debugging
+### Canned widgets
 
-You can look at what gets sent dbus with the `monitor` script
+Premade widgets in awesome/conky/widgets/ can be included by providing its filename,
+without the lua extension, in place of any widget declaration.
 
-Conky is launched by the `conky-awesome-launch` script, and run
-`conky-awesome-launch restart [conky options]` to restart conky
-
-
-
-You declare a conky widget like this:
 ```
-{
-  icon    = <string>,     -- image filename
-  label   = <string>,     -- a static textbox
-  conky   = <string>,     -- what gets passed to conky_parse()
-  updater = <function>,   -- updater function, details below
-  {                          -- list of any number of:
-    <conky declaration>,     -- nested conky widgets
-    <canned conky widget>,   -- premade widgets from .config/awesome/conky/widgets
-    <any wibox>,             -- if you want other widgets inbetween conky widgets
+conky.widget({
+  conky = "${cpu}"
+  {
+    "battery"       -- battery widget, from widgets/battery.lua
   }
-}
+})
 ```
+
+## Caveats and Gotchas
+
+### Conky
+
+Conky only runs its lua scripts when the `out_to_x` setting is `true`.
+Furthermore, in versions `>=1.10` conky will halt its loop if its window
+isn't on the current desktop. This consequently halts the updating of the
+widget.
+
+### Awesome in Xephyr
+
+If you start a nested awesome in Xephyr, you will need to start this in a
+separate dbus session. You can do this by starting the nested awesome with
+`dbus-launch --sh-syntax --exit-with-session awesome [awesome-options]`
+
 
