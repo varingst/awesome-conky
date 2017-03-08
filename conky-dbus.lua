@@ -1,4 +1,6 @@
 
+package.path = os.getenv("HOME") .. "/.config/awesome/conky/?.lua;" .. package.path
+
 if os.getenv("CONKY_DEBUG") == "true" then
     print("conky-dbus running in debug mode")
     rawset(_G, "CONKY_DEBUG", true)
@@ -13,7 +15,6 @@ local previous_request = 0
 
 function conky_update_awesome() -- luacheck: ignore
     conky_string = listen() or conky_string
-
 
     if conky_string then
         send(conky_parse(conky_string))

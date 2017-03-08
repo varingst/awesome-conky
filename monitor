@@ -1,7 +1,4 @@
 #!/usr/bin/env lua
-if arg[1] == "debug" then
-    rawset(_G, "CONKY_DEBUG", true)
-end
 
 local CONST = require("common-constants")
 
@@ -41,8 +38,7 @@ local awk = table.concat({
 
 local cmd = mon .. " | " .. awk
 
--- luacheck: globals CONKY_DEBUG
-if CONKY_DEBUG then
+if arg[1] == "-v" then
     print("running with command:")
     print(cmd)
 end

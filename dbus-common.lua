@@ -1,27 +1,19 @@
 -- INIT -- {{{1
 
+-- luacheck: globals CONKY_DEBUG
 local ldbus = require("ldbus")
 local CONST = require("common-constants")
 local dbus = {}
 
-local fnoop = function() end
-
--- TODO: some actual error handling
-
 function dbus.setup(name) -- {{{1
   -- returns a set of functions,
   -- one for emitting signals, and one for checking for them
-  --
-  -- NOTE: including this module returns this function
   if not (name == "conky" or name == "awesome") then
     print("Must be conky or awesome, got:", name)
     return
   end
 
   local conn = assert(ldbus.bus.get("session"))
-  --if not pcall(dbus.request_name(conn, name)) then
-      --return fnoop, fnoop, fnoop
-  --end
   dbus.request_name(conn, name)
 
   if name == "conky" then
@@ -36,7 +28,6 @@ end
 
 function dbus.listener_for(conn, signal_type) -- {{{1
   -- returns a function that checks if the specified signal has been emitted
-  --local conn = conn
   if CONKY_DEBUG then
       print("setting up listener for signal: " .. signal_type)
   end
@@ -56,8 +47,6 @@ end
 
 function dbus.emitter_for(conn, signal_type, member) -- {{{1
   -- returns a function that emits the specified signal
-  --local conn = conn
-  --local signal_type = signal_type
   local last_message = nil
 
   if CONKY_DEBUG then

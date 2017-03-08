@@ -1,19 +1,9 @@
--- luacheck: globals CONKY_DEBUG
 local COMMON_NAME = "org.awesomewm"
 local CONKY_NAME = COMMON_NAME .. ".conky"
 local AWESOME_NAME = COMMON_NAME .. ".awful"
 
-local HOME = os.getenv("HOME")
-
-local CONKY_LAUNCH = HOME .. "/.config/awesome/conky/conky-awesome-launch"
-
-if CONKY_DEBUG then
-    CONKY_NAME = "org.awesomewm.test.conky"
-    CONKY_LAUNCH = CONKY_LAUNCH .. " --debug"
-end
-
 local constants = {
-    CONKY_LAUNCH          = CONKY_LAUNCH,
+    CONKY_LAUNCH          = "conky",
     DELIMITER             = "", -- <C-D>
     DBUS_PATH             = "/",
     CONKY_NAME            = CONKY_NAME,
