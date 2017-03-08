@@ -1,4 +1,32 @@
--- INIT -- {{{1
+-- usage {{{1
+--[[
+
+Requirements:
+ - Conky running with times_in_seconds = true
+ - Battery icons in theme:
+    - beautiful["icon-battery-caution"] = <filename> for errors and unknowns
+    - beautiful["icon-battery-N"]
+      where N is 000, 020, 040, 060, 080, 100
+      when the battery is draining
+    - beautiful["icon-battery-N-charging"]
+      where N is 000, 020, 040, 060, 080, 100
+      when the battery is charging
+
+Configuration in rc.lua, here shown with the default settings:
+
+local conky = require("conky")
+conky.config.battery = {
+    suspend_time = 300,
+    suspend_cmd = "sudo /usr/bin/pm-suspend-hybrid"
+}
+
+suspend_time is the time left on the battery in seconds when the suspend
+notification is shown. Account for the 60 seconds the notification is
+displayed before actually suspending the system.
+
+--]]
+
+-- init {{{1
 local beautiful = require("beautiful")
 local naughty = require("naughty")
 local awful = require("awful")
@@ -45,7 +73,7 @@ local function maybe_suspend(time_left) -- {{{1
 end
 
 local function maybe_cancel_suspend() -- {{{1
-    if suspend_initiated == false or suspend_notification == nil then
+    if not suspend_initiated or suspend_notification == nil then
         return
     end
     suspend_initiated = false
