@@ -225,7 +225,8 @@ end
 
 function widget.maybe_require(t_or_str) -- {{{2
     if type(t_or_str) == "string" then
-        t_or_str = require("conky/widgets/" .. t_or_str)
+        local settings = public[t_or_str] or {}
+        t_or_str = require("conky/widgets/" .. t_or_str)(settings)
     end
     return t_or_str
 end
