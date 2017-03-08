@@ -64,7 +64,7 @@ local widget = {  -- for the widget that awesome draws
 }
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
-local public = {}  -- public interface
+local public = { config = {} }  -- public interface
 
 
 -- default conky client properties
@@ -225,7 +225,8 @@ end
 
 function widget.maybe_require(t_or_str) -- {{{2
     if type(t_or_str) == "string" then
-        t_or_str = require("conky/widgets/" .. t_or_str)
+        local settings = public.config[t_or_str] or {}
+        t_or_str = require("conky/widgets/" .. t_or_str)(settings)
     end
     return t_or_str
 end
@@ -366,6 +367,4 @@ function updater.add_string(conkystr) -- {{{2
     end
 end
 
--- RETURN PUBLIC INTERFACE --- {{{1
-
-return public
+return public --- {{{1
