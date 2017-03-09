@@ -59,8 +59,10 @@ end
 -- MODULES -- {{{2
 
 local widget = {  -- for the widget that awesome draws
-    COMPOSED = Set({ "conkybox", "iconbox", "labelbox", "background" }),
-    CONTENT  = Set({ "conky", "icon", "label", "updater" }),
+    -- for declaring subwidget properties
+    SUBW_DECL = Set({ "conkybox", "iconbox", "labelbox", "background" }),
+    -- for declaring a conky widget
+    CONKY_DECL  = Set({ "conky", "icon", "label", "updater" }),
 }
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
@@ -175,10 +177,10 @@ end
 function widget.inherit_properties(child, parent) -- {{{2
     for prop, value in pairs(parent) do
         -- assume all number keys are list items/nested widgets
-        if type(prop) == "number" or widget.CONTENT.has(prop) then
+        if type(prop) == "number" or widget.CONKY_DECL.has(prop) then
             repeat until true -- noop/continue
         -- parent supplies a table of properties for a composed widget
-        elseif widget.COMPOSED.has(prop) then
+        elseif widget.SUBW_DECL.has(prop) then
             if child[prop] then
                 widget.inherit_properties(child[prop], value)
             else
@@ -196,8 +198,8 @@ function widget.apply_properties(raw, w, wtype) -- {{{2
     for prop, value in pairs(raw) do
         -- skip the keys that we know are not widget properties
         if type(prop) == "number" or
-           widget.COMPOSED.has(prop) or
-           widget.CONTENT.has(prop) then
+           widget.SUBW_DECL.has(prop) or
+           widget.CONKY_DECL.has(prop) then
             repeat until true
         else
             -- collect the common properties
