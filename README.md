@@ -5,10 +5,10 @@ conky-awesome lets you make widgets displaying system information from [conky](h
 ## Requirements
 * awesome with dbus support
 * conky with X support
-* [lua bindings to dbus](github.com/daurnimator/ldbus)
+* [lua bindings to dbus](https://github.com/daurnimator/ldbus)
 
 ## Installation
-Clone this repo to ~/.config/awesome/conky
+Clone this repo to `~/.config/awesome/conky`
 
 ## Configuration
 
@@ -33,9 +33,9 @@ Restarting awesome will not spawn additional conky clients.
 
 #### Keybindings
 
-The conky client's own window defaults to being behind all others.
+The conky client's own window defaults to being behind all other windows.
 
-Bind keys for raising the client window on top of all other windows.
+Bind keys for raising the client window on top.
 
 ```
 globalkeys = awful.util.table.join(
@@ -74,11 +74,12 @@ conky.lower = function(c) c.opacity = 0.4 end
 Conky widget declaration:
 ```
 {
-  icon       = <string>,     -- image filename
-  label      = <string>,     -- a static textbox
-  conky      = <string>,     -- the string conky evaluates with conky_parse()
-  background = <table>,      -- background properties table
-  updater    = <function>,   -- custom updater function
+  icon             = <string>,     -- image filename
+  label            = <string>,     -- text for a label
+  conky            = <string>,     -- the string conky evaluates with conky_parse()
+  background       = <table>,      -- background properties table
+  updater          = <function>,   -- custom updater function
+  <wibox property> = <value>       -- properties for the widgets
   {                          -- any number of child widgets:
     <conky declaration>,     -- nested conky widget declarations
     <canned conky widget>,   -- premade widgets from .config/awesome/conky/widgets
@@ -89,8 +90,8 @@ Conky widget declaration:
 
 A conky widget consists of up to four subwidgets, all optional:
   - `icon` declares a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance
-  - `label` declares a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance
-  - `conky` declares a [wibox.widget.imagebox](http://awesomewm.org/apidoc/classes/wibox.widget.imagebox.html) instance
+  - `label` declares a [wibox.widget.textbox](http://awesomewm.org/apidoc/classes/wibox.widget.textbox.html) instance
+  - `conky` declares a [wibox.widget.textbox](http://awesomewm.org/apidoc/classes/wibox.widget.textbox.html) instance
   - `background` declares a [wibox.container.background](http://awesomewm.org/apidoc/classes/wibox.container.background.html) instance
 
 ### A minimal widget
@@ -99,7 +100,7 @@ Simply declaring a string to be evaluated by conky:
 ```
 s.mywibox:setup {
   .....
-  conky.widget({ conky = "CPU: ${cpu 0}% MEM: ${memperc}% GPU: ${hwmon 0 temp 1}" }),
+  conky.widget({ conky = "CPU: ${cpu0}% MEM: ${memperc}% GPU: ${hwmon 0 temp 1}" }),
   ....
 }
 ```
@@ -111,7 +112,7 @@ Simple example with an icon and a text label:
 conky.widget({
     icon = "my_neat_cpu_icon.png",
     label = "CPU:",
-    conky = "${cpu%}"
+    conky = "${cpu0}"
 })
 
 ```
@@ -125,7 +126,7 @@ conky.widget({
   label = "CPU:",
   conky = "${cpu}",
 
-  -- properties for background wibox
+  -- properties for the background wibox
   background = { bg = "red" },
 
   -- properties for the label wibox
@@ -150,18 +151,22 @@ of its parent.
 conky.widget({
   font = "My Neat Font",
   label = "CPU:",
-  conky = "${cpu temp},
-  { -- child widget 1        -- inherits "My Neat Font"
+  conky = "${hwmon 1 temp 1}",   -- cpu temp
+
+  { -- child widget 1 inherits "My Neat Font"
     label = "Core 1:",
-    { conky = "${cpu0}" },   -- grandchild widget 1
-    { conky = "${cpu1}" },   -- grandchild widget 2
+    { conky = "${cpu1}" },   -- as does the grandchildren
+    { conky = "${cpu2}" },
   },
-  { -- child widget 2        -- inherits "My Neat Font"
+
+  { -- child widget 2 inherits "My Neat Font"
     label = "Core 2:",
-    { conky = "${cpu2}" },   -- grandchild widget 3
-    { conky = "${cpu3}" },   -- grandchild widget 4
+    { conky = "${cpu3}" },   -- as does the grandchildren
+    { conky = "${cpu4}" },
   },
+
   ....
+
   {
     font = "Font for Ram"    -- different font for RAM child widget
     label = "RAM:"
@@ -205,7 +210,7 @@ A CPU widget that changes it background color to red if the load goes above 80%:
 ```
 conky.widget({
   label = "CPU:",
-  conky = "${cpu}",
+  conky = "${cpu0}",
   background = { bg = "grey" },
 
   updater = function(conky_update, conky_wibox, _, _, background)
@@ -227,7 +232,7 @@ its filename, without the lua extension, in place of any widget declaration.
 
 ```
 conky.widget({
-  conky = "CPU: ${cpu}"
+  conky = "CPU: ${cpu0}"
   {
     "battery"       -- battery widget, from widgets/battery.lua
   }
