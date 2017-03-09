@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
-local CONST = require("common-constants")
+local const = require("common-constants")
 
 local function expr_signal(string)
     return "\"type='signal'," .. string .. "\""
@@ -18,13 +18,13 @@ local function signal_from_dbus(name)
 end
 
 local function awk_var(name)
-    return "-v " .. name .. "='" .. CONST(name:upper()) .. "'"
+    return "-v " .. name .. "='" .. const(name:upper()) .. "'"
 end
 
 local mon = table.concat({
     "dbus-monitor",
-    expr_sender(CONST("CONKY_NAME")),
-    expr_sender(CONST("AWESOME_NAME")),
+    expr_sender(const("CONKY_NAME")),
+    expr_sender(const("AWESOME_NAME")),
     signal_from_dbus("NameAcquired"),
 }, " ")
 

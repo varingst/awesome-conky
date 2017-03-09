@@ -2,7 +2,7 @@
 
 -- luacheck: globals CONKY_DEBUG
 local ldbus = require("ldbus")
-local CONST = require("common-constants")
+local const = require("common-constants")
 local dbus = {}
 
 function dbus.setup(name) -- {{{1
@@ -17,12 +17,12 @@ function dbus.setup(name) -- {{{1
   dbus.request_name(conn, name)
 
   if name == "conky" then
-    return dbus.listener_for(conn, CONST("STRING_FOR_CONKY")),
-           dbus.emitter_for(conn, CONST("UPDATE_FOR_WIDGET")),
-           dbus.emitter_for(conn, CONST("UPDATE_FOR_WIDGET"), CONST("CONKY_NEEDS_STRING"))
+    return dbus.listener_for(conn, const("STRING_FOR_CONKY")),
+           dbus.emitter_for(conn, const("UPDATE_FOR_WIDGET")),
+           dbus.emitter_for(conn, const("UPDATE_FOR_WIDGET"), const("CONKY_NEEDS_STRING"))
   else
-    return dbus.listener_for(conn, CONST("UPDATE_FOR_WIDGET")),
-           dbus.emitter_for(conn, CONST("STRING_FOR_CONKY"))
+    return dbus.listener_for(conn, const("UPDATE_FOR_WIDGET")),
+           dbus.emitter_for(conn, const("STRING_FOR_CONKY"))
   end
 end
 
@@ -36,7 +36,7 @@ function dbus.listener_for(conn, signal_type) -- {{{1
   return function()
     if conn:read_write(0) then
       local msg = conn:pop_message()
-      if msg and msg:get_member() == CONST("MEMBER") then
+      if msg and msg:get_member() == const("MEMBER") then
         local iter = ldbus.message.iter.new()
         msg:iter_init(iter)
         return iter:get_basic()
@@ -50,15 +50,15 @@ function dbus.emitter_for(conn, signal_type, member) -- {{{1
   local last_message = nil
 
   if CONKY_DEBUG then
-      print("setting up emitter on: " .. signal_type .. "." .. (member or CONST("MEMBER")))
+      print("setting up emitter on: " .. signal_type .. "." .. (member or const("MEMBER")))
   end
 
   return function(message)
     if message == last_message then return end
 
-    local msg = assert(ldbus.message.new_signal(CONST("DBUS_PATH"),
+    local msg = assert(ldbus.message.new_signal(const("DBUS_PATH"),
                                                 signal_type,
-                                                member or CONST("MEMBER")),
+                                                member or const("MEMBER")),
                        "Message Null")
     local iter = ldbus.message.iter.new()
     msg:iter_init_append(iter)
@@ -75,7 +75,7 @@ end
 
 function dbus.request_name(conn, name) -- {{{1
   -- register our bus name with dbus
-  local busname = CONST(name:upper() .. "_NAME")
+  local busname = const(name:upper() .. "_NAME")
   if CONKY_DEBUG then
       print("requesting name: " .. busname)
   end
