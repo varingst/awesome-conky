@@ -50,16 +50,26 @@ Both functions have this signature:
 
 #### Client Window Properties
 
-You can provide a table of properties for the client window, and functions
-to call when the window is raised and lowered
+To set [properties](https://awesomewm.org/apidoc/classes/client.html#Object_properties) for the client window (defaults shown):
+```
+conky.properties = {
+    floating = true,
+    sticky = true,
+    ontop = false,
+    skip_taskbar = true,
+    below = true,
+    focusable = true
+}
+```
+
+You can also provide functions to call when the window is raised and lowered
 
 ```
-conky.properties({ opacity = 0.4 })
 conky.raise = function(c) c.opacity = 1.0 end
 conky.lower = function(c) c.opacity = 0.4 end
 ````
 
-## Conky Widgets
+## Making Conky Widgets
 
 Conky widget declaration:
 ```

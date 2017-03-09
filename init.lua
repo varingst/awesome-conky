@@ -64,19 +64,17 @@ local widget = {  -- for the widget that awesome draws
 }
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
-local public = { config = {} }  -- public interface
-
-
--- default conky client properties
-local properties = {
-    floating = true,
-    sticky = true,
-    ontop = false,
-    skip_taskbar = true,
-    below = true,
-    focusable = false,
+local public = {   -- public interface
+    config = {},      -- canned widget configuration
+    properties = {    -- client window properties
+        floating = true,
+        sticky = true,
+        ontop = false,
+        skip_taskbar = true,
+        below = true,
+        focusable = false,
+    }
 }
-
 
 -- PUBLIC INTERFACE -- {{{1
 function public.widget(root) -- {{{2
@@ -132,11 +130,6 @@ function public.toggle_key(key, mod)  -- {{{2
            { description = "toggle conky window on top", group = "conky" })
 end
 
-function public.properties(t)  -- {{{2
-    for prop, value in pairs(t) do
-        properties[prop] = value
-    end
-end
 
 
 -- WIDGET -- {{{1
@@ -280,7 +273,7 @@ awesome.connect_signal("startup",
 
 function window.spawn() -- {{{2
     awful.spawn(const("CONKY_LAUNCH"),
-                properties,
+                public.properties,
                 updater.send_string)
 end
 
