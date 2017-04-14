@@ -1,10 +1,14 @@
 # Conky widgets for Awesome WM 4.0
 
-conky-awesome lets you make widgets displaying system information from [conky](https://github.com/brndnmtthws/conky)
+`conky-awesome` is a framework for making [awesome](https://awesomewm.org) widgets displaying system information from [conky](https://github.com/brndnmtthws/conky)
+
+`conky-awesome` provides some optional keybindings to manange conky's own
+X-window, but you can also run `conky-awesome` headless by configuring conky
+with `out_to_x = false` and only have it update your widgets.
 
 ## Requirements
+* conky
 * awesome with dbus support
-* conky with X support
 * [lua bindings to dbus](https://github.com/daurnimator/ldbus)
 
 ## Installation
@@ -246,9 +250,15 @@ conky.config.<widget> = { <option> = <value> }
 ```
 
 To make a canned widget, have the module return a constructor function
-that takes a table of options and returns a widget declaration:
+that takes a table of options and returns a widget declaration. The top
+of the file should contain a comment describing use and configuration.
 
 ```
+-- usage
+--[[
+  Description and instructions goes here
+--]]
+
 return function(options)
   -- apply options
   return {
@@ -259,14 +269,52 @@ end
 
 Please contribute if you make anything cool or useful.
 
+### Mixins
+
+Mixins, located in `awesome/conky/mixins/`, are for extending widget
+declaration with common functionality. Below the `keep-max` mixin extends
+the CPU widget declaration with functionality that tracks and displays both
+the current and highest value, in this case CPU core temperature.
+
+```
+conky.widget({
+  conky.mixin("keep-max", {
+    icon = beautiful["icon-hardware-cpu"],
+    conky = "${hwmon temp 2} ${hwmon 3 temp 3}",
+    {
+      conky = ${cpu 0}% ",
+    }
+  })
+})
+```
+
+Any number of mixins may be provided, and they are applied in order to the
+provided declaration.
+
+```
+conky.mixin("keep-max", "alert-on", ..., <widget declaration>)
+```
+
+To make a mixin, have the module return a constructor function
+that takes a widget declaration to extend. The top of the file should
+contain a comment describing use and configuration.
+
+```
+-- usage
+--[[
+  Description and instructions goes here
+--]]
+
+return function(widget_decl)
+  <define stuff>
+  <extend widget>
+  return widget_decl
+end
+```
+
 ## Caveats and Gotchas
 
 ### Conky
-
-Conky only runs its lua scripts when the `out_to_x` setting is `true`.
-Furthermore, in versions `>=1.10` conky will halt its loop if its window
-isn't on the current desktop/tag. This consequently halts the updating of the
-widget.
 
 If you change your `.conkyrc` while conky is running, conky will restart itself
 but appears to not be reloading its lua files. Conky will complain about

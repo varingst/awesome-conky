@@ -62,7 +62,7 @@ local widget = {  -- for the widget that awesome draws
     -- for declaring subwidget properties
     SUBW_DECL = Set({ "conkybox", "iconbox", "labelbox", "background" }),
     -- for declaring a conky widget
-    CONKY_DECL  = Set({ "conky", "icon", "label", "updater" }),
+    CONKY_DECL  = Set({ "conky", "icon", "label", "updater", "buttons" }),
 }
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
@@ -132,7 +132,13 @@ function public.toggle_key(key, mod)  -- {{{2
            { description = "toggle conky window on top", group = "conky" })
 end
 
-
+function public.mixin(...) -- {{{2
+    local root = arg[#arg]
+    for i = 1, #arg - 1 do
+        root = require("conky/mixins/" .. arg[i])(root)
+    end
+    return root
+end
 
 -- WIDGET -- {{{1
 function widget.make(raw) -- {{{2
@@ -158,8 +164,9 @@ function widget.make(raw) -- {{{2
         widget.apply_properties(raw, background, "background")
     end
 
+    local conkybox = nil
     if raw.conky then
-        local conkybox = wibox.widget.textbox("")
+        conkybox = wibox.widget.textbox("")
         widget.apply_properties(raw, conkybox, "conkybox")
         layout:add(conkybox)
 
@@ -167,11 +174,34 @@ function widget.make(raw) -- {{{2
         updater.add(conkybox, iconbox, labelbox, background, raw.updater)
     end
 
+    local root = nil
     if raw.background then
-        return wibox.layout.fixed.horizontal(background)
+        root = wibox.layout.fixed.horizontal(background)
     else
-        return layout
+        root = layout
     end
+
+    if raw.buttons then
+        local buttons = {}
+        for _, button in ipairs(raw.buttons) do
+            local mod = button[1]
+            local button_num = button[2]
+            local func = button[3]
+
+            buttons = awful.util.table.join(buttons,
+                awful.button(mod, button_num, function()
+                    local conkybox = conkybox
+                    local iconbox = iconbox
+                    local labelbox = labelbox
+                    local background = background
+                    func(conkybox, iconbox, labelbox, background)
+                end)
+            )
+        end
+        root:buttons(buttons)
+    end
+
+    return root
 end
 
 function widget.inherit_properties(child, parent) -- {{{2
