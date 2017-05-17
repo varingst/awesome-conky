@@ -1,3 +1,4 @@
+local beautiful = require("beautiful")
 local public = {}
 
 function public.awesome_root() -- {{{1
@@ -11,6 +12,12 @@ function public.awk(file, args) -- {{{1
         cmd = cmd .. " -v " .. a .. "=" .. v
     end
     return cmd .. " -f " .. public.awesome_root() .. "conky/awk/" .. file .. ".awk"
+end
+
+function public.icon_for(prefix, fallback)
+    return function(icon)
+        return beautiful[prefix .. icon] or beautiful[fallback]
+    end
 end
 
 return public

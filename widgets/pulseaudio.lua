@@ -73,6 +73,7 @@ return function(user_settings)
                         settings.slider,
                         slider_immutable))
 
+    local get_icon = util.icon_for("icon-pulseaudio-", "icon-pulseaudio-muted")
     local current_icon = nil
     local current_volume = 0
     local muted = false
@@ -80,7 +81,7 @@ return function(user_settings)
     local mute_toggle = mute_toggle_for(settings.sink)
 
     local updater = function(update, _, iconbox, _)
-        local icon = "icon-pulseaudio-"
+        local icon = nil
         local volume = tonumber(update) or 0
         if volume < 0 then
             muted = true
@@ -90,15 +91,15 @@ return function(user_settings)
         end
 
         if muted then
-            icon = icon .. "muted"
+            icon = "muted"
         elseif volume == 0 then
-            icon = icon .. "0"
+            icon = "0"
         elseif volume < 33 then
-            icon = icon .. "min"
+            icon = "min"
         elseif volume < 66 then
-            icon = icon .. "med"
+            icon = "med"
         else
-            icon = icon .. "max"
+            icon = "max"
         end
 
         if volume ~= current_volume then
@@ -107,7 +108,7 @@ return function(user_settings)
         end
 
         if icon ~= current_icon then
-            iconbox:set_image(beautiful[icon] or beautiful["icon-pulseaudio-muted"])
+            iconbox:set_image(get_icon(icon))
             current_icon = icon
         end
 
@@ -116,7 +117,7 @@ return function(user_settings)
     return {
         slider,
         {
-            icon = beautiful["icon-pulseaudio-med"],
+            icon = get_icon("med"),
             conky    = "${exec pactl list sinks | " ..
                        util.awk("pulseaudio-sink", { sink = settings.sink }) .. "}",
             conkybox = { visible = false },
