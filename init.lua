@@ -62,7 +62,7 @@ local widget = {  -- for the widget that awesome draws
     -- for declaring subwidget properties
     SUBW_DECL = Set({ "conkybox", "iconbox", "labelbox", "background" }),
     -- for declaring a conky widget
-    CONKY_DECL  = Set({ "conky", "icon", "label", "updater", "buttons" }),
+    CONKY_DECL  = Set({ "conky", "icon", "label", "updater", "buttons", "signals" }),
 }
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
@@ -199,6 +199,12 @@ function widget.make(raw) -- {{{2
             )
         end
         root:buttons(buttons)
+    end
+
+    if raw.signals then
+        for signal, func in pairs(raw.signals) do
+            root:connect_signal(signal, func)
+        end
     end
 
     return root
@@ -372,7 +378,7 @@ function updater.add(conkybox, iconbox, labelbox, background, func) -- {{{2
         local labelbox = labelbox
         local background = background
         local func = func or    function(result, conky, icon, label, background)
-                                    conky:set_text(result)
+                                    conky:set_text(result or "")
                                 end
         local last_update = nil
 
