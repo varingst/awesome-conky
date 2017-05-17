@@ -17,7 +17,7 @@ Configuration in rc.lua, here shown with the default settings:
 local conky = require("conky")
 conky.config.battery = {
     suspend_time = 300,
-    suspend_cmd = "sudo /usr/bin/pm-suspend-hybrid"
+    suspend_cmd = "sudo /usr/sbin/pm-suspend-hybrid"
 }
 
 suspend_time is the time left on the battery in seconds when the suspend
