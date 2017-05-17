@@ -29,7 +29,7 @@ local mon = table.concat({
 }, " ")
 
 local awk = table.concat({
-    "awk -f monitor-filter.awk",
+    "awk -f awk/monitor-filter.awk",
     awk_var("conky_name"),
     awk_var("awesome_name"),
     awk_var("string_for_conky"),
