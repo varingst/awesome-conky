@@ -59,10 +59,15 @@ end
 -- MODULES -- {{{2
 
 local widget = {  -- for the widget that awesome draws
+-- two sets for 'reserving property names'
     -- for declaring subwidget properties
+    -- passed down to child widgets
     SUBW_DECL = Set({ "conkybox", "iconbox", "labelbox", "background" }),
-    -- for declaring a conky widget
-    CONKY_DECL  = Set({ "conky", "icon", "label", "updater", "buttons", "signals" }),
+    -- for declaring the composed widgets
+    -- not passed down to child widgets
+    CONKY_DECL  = Set({
+        "conky", "icon", "label", "updater", "buttons", "signals", "tooltip"
+    }),
 }
 local updater = {} -- for updating the widget
 local window = {}  -- for conky's own window
@@ -89,18 +94,19 @@ function public.widget(root) -- {{{2
 
     for raw_wibox in unprocessed.head do
         -- already processed or premade wibox: leaf
-        -- (wiboxes are type:table so we look for the draw function)
-        if raw_wibox.draw then
+        if widget.already_built(raw_wibox) then
             processed.push(unprocessed.pop())
 
         -- not seen before, so mark, pass properties to children,
         -- and push children onto the unprocessed stack
         elseif not seen.has(raw_wibox) then
             seen.add(raw_wibox)
-            for _, nested in ipairs(raw_wibox) do
-                nested = widget.maybe_require(nested)
-                unprocessed.push(nested)
-                widget.inherit_properties(nested, raw_wibox)
+            for _, child in ipairs(raw_wibox) do
+                child = widget.maybe_require(child)
+                unprocessed.push(child)
+                if not widget.already_built(child) then
+                    widget.inherit_properties(child, raw_wibox)
+                end
             end
 
         -- seen before, so all children are on the processed stack
@@ -132,7 +138,8 @@ function public.toggle_key(key, mod)  -- {{{2
            { description = "toggle conky window on top", group = "conky" })
 end
 
-function public.mixin(...) -- {{{2
+-- function public.mixin(...) {{{2
+function public.mixin(...) --luacheck: no unused args
     local root = arg[#arg]
     for i = 1, #arg - 1 do
         root = require("conky/mixins/" .. arg[i])(root)
@@ -174,7 +181,7 @@ function widget.make(raw) -- {{{2
         updater.add(conkybox, iconbox, labelbox, background, raw.updater)
     end
 
-    local root = nil
+    local root
     if raw.background then
         root = wibox.layout.fixed.horizontal(background)
     else
@@ -186,16 +193,21 @@ function widget.make(raw) -- {{{2
         for _, button in ipairs(raw.buttons) do
             local mod = button[1]
             local button_num = button[2]
-            local func = button[3]
+            local press = button[3]
+            local release = button[4]
+            local on_release
+
+            if release then
+                on_release = function()
+                    release(conkybox, iconbox, labelbox, background)
+                end
+            end
 
             buttons = awful.util.table.join(buttons,
                 awful.button(mod, button_num, function()
-                    local conkybox = conkybox
-                    local iconbox = iconbox
-                    local labelbox = labelbox
-                    local background = background
-                    func(conkybox, iconbox, labelbox, background)
-                end)
+                    press(conkybox, iconbox, labelbox, background)
+                end,
+                on_release)
             )
         end
         root:buttons(buttons)
@@ -203,8 +215,16 @@ function widget.make(raw) -- {{{2
 
     if raw.signals then
         for signal, func in pairs(raw.signals) do
-            root:connect_signal(signal, func)
+            root:connect_signal(signal, function()
+                func(conkybox, iconbox, labelbox, background)
+            end)
         end
+    end
+
+    if raw.tooltip then
+        awful.tooltip(awful.util.table.join(raw.tooltip, {
+            objects = awful.util.table.join(raw.tooltip or {}, { root })
+        }))
     end
 
     return root
@@ -260,6 +280,12 @@ function widget.maybe_require(t_or_str) -- {{{2
         t_or_str = require("conky/widgets/" .. t_or_str)(settings)
     end
     return t_or_str
+end
+
+function widget.already_built(w) -- {{{2
+    -- check for the _private table to determine if we're dealing with
+    -- an already built widget or a layout
+    return w._private
 end
 
 -- WINDOW -- {{{1
