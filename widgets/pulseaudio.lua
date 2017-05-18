@@ -22,7 +22,6 @@ conky.config.pulseaudio = {
 
 
 -- init {{{1
-local beautiful = require("beautiful")
 local awful = require("awful")
 local wibox = require("wibox")
 local util = require("conky/util")
