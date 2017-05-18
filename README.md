@@ -1,4 +1,4 @@
-# Conky widgets for Awesome WM 4.0
+# Conky widgets for Awesome WM 4
 
 `conky-awesome` is a framework for making [awesome](https://awesomewm.org) widgets displaying system information from [conky](https://github.com/brndnmtthws/conky)
 
@@ -83,6 +83,9 @@ Conky widget declaration:
   conky            = <string>,     -- the string conky evaluates with conky_parse()
   background       = <table>,      -- background properties table
   updater          = <function>,   -- custom updater function
+  buttons          = <table>,      -- buttons to connect to the widget
+  signals          = <table>,      -- signals to connect to the widget
+  tooltip          = <table>,      -- tooltip for the widget
   <wibox property> = <value>       -- properties for the widgets
   {                          -- any number of child widgets:
     <conky declaration>,     -- nested conky widget declarations
@@ -209,7 +212,7 @@ an updater function with the following signature:
 Where `conky_update` is the update from conky, and the rest are the subwidget
 wiboxes.
 
-A CPU widget that changes it background color to red if the load goes above 80%:
+A CPU widget that changes its background color to red if the load goes above 80%:
 
 ```
 conky.widget({
@@ -226,6 +229,91 @@ conky.widget({
       background.bg = "grey"
     end
   end
+})
+```
+
+### Buttons
+
+Providing a table of button declarations allows you to change the widget
+based on button pressed.
+
+A CPU widget that changes its background color to blue while the user holds
+CTRL and <mouse1>:
+
+```
+conky.widget({
+  label = "CPU:",
+  conky = "${cpu0}",
+  background = { bg = "red" },
+  button_decl = {
+    {                      -- declaration of single button
+      { "Control" },       -- table of modifiers
+      1,                   -- key, here <mouse1>
+      function(conkybox, iconbox, labelbox, background)  -- function for
+        background.bg = "blue"                           -- button press
+      end,
+      function(conkybox, iconbox, labelbox, background)  -- (optional) function
+        background.bg = "red"                            -- for button release
+      end
+    },
+    ...                    -- more button declarations
+  }
+})
+```
+
+### Signals
+
+Providing a table of signals and conky-awesome connects them for you.
+
+A CPU widget showing the load on all four cores while the mouse hovers over it:
+
+```
+local cpu_widget = (function()
+  local conkyb = {                    -- properties are not passed to
+    forced_width = 30,                -- already built child widgets, so
+    align = "right",                  -- shared properties are declared here
+  }
+
+  local cores = conky.widget({        -- building the widget here to close
+    conkybox = conkyb,                -- up in signal functions below
+    { conky = "${cpu 1}%" },
+    { conky = "${cpu 2}%" },
+    { conky = "${cpu 3}%" },
+    { conky = "${cpu 4}%" },
+  })
+  cores.visible = false               -- widget starts out with cores hidden
+
+  return {                            -- widget declaration
+    conkybox = conkyb,                -- shared properties
+    conky = "${cpu 0}%",              -- total load %
+    signals = {
+      ['mouse::enter'] = function(conkybox, iconbox, labelbox, background)
+        cores.visible = true          -- on hover, show cores and hide
+        conkybox.visible = false      -- total load
+      end,
+      ['mouse::leave'] = function(conkybox, iconbox, labelbox, background)
+        cores.visible = false         -- reset when mouse leaves
+        conkybox.visible = true
+      end,
+    },
+    cores,
+  }
+end)()
+```
+
+### Tooltip
+
+Simply a table to pass to [awful.tooltip()](https://awesomewm.org/doc/api/classes/awful.tooltip.html).
+
+A simple 24 hour clock with a date tooltip:
+
+```
+conky.widget({
+  conky = "${time %R}",
+  conkybox = { align = "center" },
+  tooltip = {
+    timer_function = function() return os.date("%A %B %d %Y") end,
+  }
 })
 ```
 
@@ -271,7 +359,7 @@ Please contribute if you make anything cool or useful.
 
 ### Mixins
 
-Mixins, located in `awesome/conky/mixins/`, are for extending widget
+Mixins, located in `awesome/conky/mixins/`, are for extending a widget
 declaration with common functionality. Below the `keep-max` mixin extends
 the CPU widget declaration with functionality that tracks and displays both
 the current and highest value, in this case CPU core temperature.
