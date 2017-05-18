@@ -149,6 +149,15 @@ end
 
 -- WIDGET -- {{{1
 function widget.make(raw) -- {{{2
+    -- TODO:
+    -- This thing has grown out of proportion
+    --
+    -- All the functions passing the composed widgets back as arguments
+    -- should be rewritted to pass a single param object/table.
+    --
+    -- This will break user declarations, so it needs to test whether it receives
+    -- a param object or the widgets as params. Write something that produces
+    -- these functions
     local layout = wibox.layout.fixed.horizontal()
 
     local iconbox = nil
