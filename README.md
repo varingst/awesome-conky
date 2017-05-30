@@ -35,6 +35,12 @@ local conky = require("conky")
 This is all that is required to have conky start at launch.
 Restarting awesome will not spawn additional conky clients.
 
+To launch conky with custom options, i.e. a different `conkyrc`:
+
+```
+conky.options = "-c ~/.conky/my_special_conkyrc"
+```
+
 #### Keybindings
 
 The conky client's own window defaults to being behind all other windows.
@@ -52,6 +58,21 @@ globalkeys = awful.util.table.join(
 Both functions have this signature:
 `(keystring, [ modifier table ])`
 
+You can also provide functions to call when the window is raised and lowered
+
+```
+conky.raise = function(c) c.opacity = 1.0 end
+conky.lower = function(c) c.opacity = 0.4 end
+````
+
+If you are running conky with a non-standard window class, by setting
+`own_window_class` in `conkyrc`, you must also set this in `rc.lua` for
+the keybindings to work:
+
+```
+conky.class = "MyClass"
+```
+
 #### Client Window Properties
 
 To set [properties](https://awesomewm.org/apidoc/classes/client.html#Object_properties) for the client window (defaults shown):
@@ -62,16 +83,28 @@ conky.properties = {
     ontop = false,
     skip_taskbar = true,
     below = true,
-    focusable = true
+    focusable = true,
+    titlebars_enabled = false,
 }
 ```
 
-You can also provide functions to call when the window is raised and lowered
+For these properties to apply properly when awesome is started and restarted,
+the following must be added to the `Rules` section in `awesome/rc.lua`:
 
 ```
-conky.raise = function(c) c.opacity = 1.0 end
-conky.lower = function(c) c.opacity = 0.4 end
-````
+awful.rules.rules = {
+    ....
+    conky.rules()
+}
+```
+
+Extra properties may be provided to be applied on launch, as per [awful.rules](https://awesomewm.org/apidoc/libraries/awful.rules.html):
+```
+awful.rules.rules = {
+    ....
+    conky.rules({ properties = { tag = "3" }, callback = function(c) ... end })
+}
+```
 
 ## Making Conky Widgets
 
@@ -245,7 +278,7 @@ conky.widget({
   label = "CPU:",
   conky = "${cpu0}",
   background = { bg = "red" },
-  button_decl = {
+  buttons = {
     {                      -- declaration of single button
       { "Control" },       -- table of modifiers
       1,                   -- key, here <mouse1>
