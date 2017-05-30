@@ -12,6 +12,7 @@ local conky = require("conky")
 conky.config.pulseaudio = {
     sink = 0,                  the sink to target
     step = 10,                 volume percentage to increment/decrement
+    launch = "pavucontrol"     util to launch on right click
     slider = {                 configuration of the slider appearance, see:
         forced_width = 50,       awesomewm.org/apidoc/wibox.widget.slider.html
         handle_width = 3,
@@ -29,6 +30,7 @@ local util = require("conky/util")
 local settings = {
     sink = 0,
     step = 10,
+    launch = "pavucontrol",
     slider = {},
 }
 
@@ -131,6 +133,9 @@ return function(user_settings)
                     mute_toggle()
                     muted = not muted
                     updater("" .. slider.value, nil, iconbox)
+                end },
+                { {}, 3, function()
+                    awful.spawn(settings.launch)
                 end },
                 { {}, 4, function(_, iconbox, _)
                     local new = slider.value + settings.step
