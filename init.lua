@@ -80,6 +80,7 @@ local public = {   -- public interface
         skip_taskbar = true,
         below = true,
         focusable = false,
+        titlebars_enabled = false,
     }
 }
 
@@ -145,6 +146,24 @@ function public.mixin(...) --luacheck: no unused args
         root = require("conky/mixins/" .. arg[i])(root)
     end
     return root
+end
+
+function public.rules(rule) -- {{{2
+    local rules = { rule = { class = public.class or "Conky" },
+                    properties = public.properties }
+    for k, v in pairs(rule or {}) do
+        if k == "rule" then
+            repeat until true
+        elseif k == "properties" then
+            for _k, _v in pairs(rule.properties) do
+                print("setting prop '" .. _k .. '', _v)
+                rules.properties[_k] = _v
+            end
+        else
+            rules[k] = v
+        end
+    end
+    return rules
 end
 
 -- WIDGET -- {{{1
@@ -336,18 +355,28 @@ function window.lower_delayed() -- {{{2
     window.timer:again()
 end
 
+function window.apply_properties(callback) -- {{{2
+    local c = window.client()
+    if not c.valid then return false end
+    for prop, value in pairs(public.properties) do
+        c[prop] = value
+    end
+    if callback then return callback(c) end
+    return true
+end
+
 -- conky client autostart {{{2
 awesome.connect_signal("startup",
                        function()
-                           if not window.client().valid then
-                               window.spawn()
-                           end
+                           return window.apply_properties() or window.spawn()
                        end)
 
 function window.spawn() -- {{{2
-    awful.spawn(const("CONKY_LAUNCH"),
-                public.properties,
-                updater.send_string)
+    if public.options then
+        awful.spawn.with_shell(const("CONKY_LAUNCH") .. " " .. public.options)
+    else
+        awful.spawn(const("CONKY_LAUNCH"))
+    end
 end
 
 function window.client() -- {{{2
@@ -357,7 +386,7 @@ function window.client() -- {{{2
     end
 
     window.c = awful.client.iterate(function(c)
-                                        return c.class == "Conky"
+                                        return c.class == (public.class or "Conky")
                                     end)()
     return window.c or {}
 end
