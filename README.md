@@ -140,7 +140,7 @@ Simply declaring a string to be evaluated by conky:
 ```
 s.mywibox:setup {
   .....
-  conky.widget({ conky = "CPU: ${cpu0}% MEM: ${memperc}% GPU: ${hwmon 0 temp 1}" }),
+  conky.widget({ conky = "CPU: ${cpu}% MEM: ${memperc}% GPU: ${hwmon 0 temp 1}" }),
   ....
 }
 ```
@@ -152,7 +152,7 @@ Simple example with an icon and a text label:
 conky.widget({
     icon = "my_neat_cpu_icon.png",
     label = "CPU:",
-    conky = "${cpu0}"
+    conky = "${cpu}"
 })
 
 ```
@@ -195,14 +195,14 @@ conky.widget({
 
   { -- child widget 1 inherits "My Neat Font"
     label = "Core 1:",
-    { conky = "${cpu1}" },   -- as does the grandchildren
-    { conky = "${cpu2}" },
+    { conky = "${cpu cpu1}" },   -- as does the grandchildren
+    { conky = "${cpu cpu2}" },
   },
 
   { -- child widget 2 inherits "My Neat Font"
     label = "Core 2:",
-    { conky = "${cpu3}" },   -- as does the grandchildren
-    { conky = "${cpu4}" },
+    { conky = "${cpu cpu3}" },   -- as does the grandchildren
+    { conky = "${cpu cpu4}" },
   },
 
   ....
@@ -250,7 +250,7 @@ A CPU widget that changes its background color to red if the load goes above 80%
 ```
 conky.widget({
   label = "CPU:",
-  conky = "${cpu0}",
+  conky = "${cpu}",
   background = { bg = "grey" },
 
   updater = function(conky_update, conky_wibox, _, _, background)
@@ -276,7 +276,7 @@ CTRL and <mouse1>:
 ```
 conky.widget({
   label = "CPU:",
-  conky = "${cpu0}",
+  conky = "${cpu}",
   background = { bg = "red" },
   buttons = {
     {                      -- declaration of single button
@@ -309,16 +309,16 @@ local cpu_widget = (function()
 
   local cores = conky.widget({        -- building the widget here to close
     conkybox = conkyb,                -- up in signal functions below
-    { conky = "${cpu 1}%" },
-    { conky = "${cpu 2}%" },
-    { conky = "${cpu 3}%" },
-    { conky = "${cpu 4}%" },
+    { conky = "${cpu cpu1}%" },
+    { conky = "${cpu cpu2}%" },
+    { conky = "${cpu cpu3}%" },
+    { conky = "${cpu cpu4}%" },
   })
   cores.visible = false               -- widget starts out with cores hidden
 
   return {                            -- widget declaration
     conkybox = conkyb,                -- shared properties
-    conky = "${cpu 0}%",              -- total load %
+    conky = "${cpu}%",              -- total load %
     signals = {
       ['mouse::enter'] = function(conkybox, iconbox, labelbox, background)
         cores.visible = true          -- on hover, show cores and hide
@@ -357,7 +357,7 @@ its filename, without the lua extension, in place of any widget declaration.
 
 ```
 conky.widget({
-  conky = "CPU: ${cpu0}"
+  conky = "CPU: ${cpu}"
   {
     "battery"       -- battery widget, from widgets/battery.lua
   }
@@ -403,7 +403,7 @@ conky.widget({
     icon = beautiful["icon-hardware-cpu"],
     conky = "${hwmon temp 2} ${hwmon 3 temp 3}",
     {
-      conky = ${cpu 0}% ",
+      conky = ${cpu}% ",
     }
   })
 })
