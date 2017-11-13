@@ -48,7 +48,7 @@ local settings = {
     tooltip = {}
 }
 
-local gcal_cmd = "/usr/bin/gcal --highlighting=\"{:]:[:]\" "
+local gcal_cmd = "/usr/bin/gcal --highlighting=\" :}: :]\" "
 
 local function span(attr, str)
     local open = "<span " .. attr .. ">"
@@ -65,6 +65,11 @@ local function errormsg(msg)
     return span("foreground='red'", msg)
 end
 
+local function wrap(markup)
+    local open, close = span(markup)
+    return open .. "%1" .. close .. " "
+end
+
 local tooltip = {
     default = {
         mode = "outside",
@@ -79,17 +84,10 @@ local tooltip = {
                 handle:close()
 
                 if ok then
-                    local today_open, _ = span(settings.markup.today)
-                    local holiday_open, close = span(settings.markup.holiday)
-
-                    local cal = span(settings.markup.calendar,
-                                     settings.strip(result          ):gsub(
-                        "%{ ",      "  "  .. today_open             ):gsub(
-                        "%{([^ ])", " "   .. today_open ..   "%1"   ):gsub(
-                        "%[ ",      "  "  .. holiday_open           ):gsub(
-                        "%[([^ ])", " "   .. holiday_open .. "%1"   ):gsub(
-                        "%]", close .. " "))
-                    return cal
+                    return span(settings.markup.calendar,
+                                settings.strip(result):gsub(
+                       "(%d+)}", wrap(settings.markup.today)):gsub(
+                       "(%d+)]", wrap(settings.markup.holiday)))
                 else
                     return errormsg("handle:read error reading from gcal: " ..
                                     (handle or "nil"))
