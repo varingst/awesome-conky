@@ -2,6 +2,7 @@
 local awful = require("awful")
 local gears = require("gears")
 local wibox = require("wibox")
+local naughty = require("naughty")
 awful.client = require("awful.client")
 
 local const = require("conky/common-constants")
@@ -69,10 +70,12 @@ local widget = {  -- for the widget that awesome draws
         "conky", "icon", "label", "updater", "buttons", "signals", "tooltip"
     }),
 }
-local updater = {} -- for updating the widget
+
 local window = {}  -- for conky's own window
 local public = {   -- public interface
-    config = {},      -- canned widget configuration
+    config = {     -- canned widget configuration
+        show_debug = { { "Control" }, 3 }
+    },
     properties = {    -- client window properties
         floating = true,
         sticky = true,
@@ -83,6 +86,52 @@ local public = {   -- public interface
         titlebars_enabled = false,
     }
 }
+local updater = {  -- for updating the widget
+    ejected = {},
+    conky_strings = {},
+}
+
+updater.debug = (function()
+    local updates = {}
+    local conky = {}
+    local notification = nil
+    local template = {
+        title = "ConkyAwesome Debug",
+        timeout = 0,
+        destroy = function() notification = nil end
+    }
+    local function format(output, str1, str2)
+        return output .. str1 .. " : " .. str2 .. "\n"
+    end
+    return {
+        insert = function(str, i)
+            updates[i] = str
+        end,
+
+        show_button = awful.button(
+            public.config.show_debug[1],
+            public.config.show_debug[2],
+            function()
+                notification = naughty.notify(template)
+            end
+        ),
+
+        finish = function()
+            if not notification then return end
+            local output = ""
+            for i, str in ipairs(updater.conky_strings) do
+                output = format(output, str, (updates[i] or '<nil>'))
+            end
+            if #updater.ejected > 0 then
+                output = output .. "== EJECTED WIDGETS ==\n"
+                for _, pair in pairs(updater.ejected) do
+                    output = format(output, pair[1], pair[2])
+                end
+            end
+            naughty.replace_text(notification, template.title, output)
+        end
+    }
+end)()
 
 -- PUBLIC INTERFACE -- {{{1
 function public.widget(root) -- {{{2
@@ -124,6 +173,7 @@ function public.widget(root) -- {{{2
     end
     -- when unprocessed stack is empty
     -- finished wibox is single element on processed
+    processed.head():buttons(updater.debug.show_button)
     return processed.pop()
 end
 
@@ -400,7 +450,8 @@ if dbus then
     dbus.connect_signal(const("UPDATE_FOR_WIDGET"),
 
         (function()
-            local all_but_delim = "[^" .. const("DELIMITER") .. "]+"
+            local all_but_delim = "([^" .. const("DELIMITER") .. "]*)(" ..
+                                           const("DELIMITER") .. "?)"
             local widget_update = const("MEMBER")
             local need_string = const("CONKY_NEEDS_STRING")
 
@@ -410,9 +461,23 @@ if dbus then
 
                                             -- lua "split string"
                     local from_conky_iter = string.gmatch(conky_update, all_but_delim)
-                    for _,update_func in ipairs(updater) do
-                        update_func(from_conky_iter())
+                    for i, update_func in ipairs(updater) do
+                        local update = from_conky_iter()
+                        if update == '' then
+                            updater.eject(i, 'Conky returned empty string')
+                        end
+                        local success, err = pcall(update_func, update)
+                        if not success then
+                            if type(err) == 'string' then
+                                updater.eject(i, 'Widget threw an error: '..err)
+                            else
+                                updater.eject(i, 'Widget threw an error')
+                            end
+                        end
+                        -- update_func(update)
+                        updater.debug.insert(update, i)
                     end
+                    updater.debug.finish()
                 elseif data.member == need_string then
                     -- conky is running but doesn't know what to send
                     updater.send_string()
@@ -455,11 +520,29 @@ function updater.add(conkybox, iconbox, labelbox, background, func) -- {{{2
 end
 
 function updater.add_string(conkystr) -- {{{2
+    table.insert(updater.conky_strings, conkystr)
     if updater.string then
         updater.string = updater.string .. const("DELIMITER") .. conkystr
     else
         updater.string = conkystr
     end
 end
+
+updater.eject = (function() -- {{{2
+    local null_widget = function() end
+    return function(i, reason)
+        if updater[i] == null_widget then return end
+        table.insert(updater.ejected, { updater.conky_strings[i], reason })
+        updater[i] = null_widget
+        naughty.notify({
+            title = "ConkyAwesome",
+            text = "A widget was ejected:\n" ..
+                   updater.conky_strings[i] .. "\n" ..
+                   "Reason: " .. reason,
+            preset = naughty.config.presets.critical
+        })
+    end
+end)()
+
 
 return public --- {{{1
