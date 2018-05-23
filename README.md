@@ -433,6 +433,17 @@ return function(widget_decl)
 end
 ```
 
+## Errors and Debugging
+
+`conky-awesome` will eject widgets that are misbehaving. This means that the
+widget will not receive further updates from `conky`. A widget will be ejected
+if it throws an error, of it receives an empty string as an update.
+`conky-awesome` will display a notification with a widget is ejected.
+
+If you `CTRL+RightClick` on the conky widget, `conky-awesome` will display a
+debug feed, showing the variables passed to `conky` together with its last
+updated value. The debug feed will also list ejected widgets.
+
 ## Caveats and Gotchas
 
 ### Conky
