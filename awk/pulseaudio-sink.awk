@@ -1,11 +1,31 @@
 # only read from specified sink
-$1 == "Sink"    { if (int($2) == sink) { read = 1 }
-                  else                 { read = 0 } }
-# skip to next line if we're not reading
-!read           { next }
+
+function print_volume(_sink) {
+  if (mute[_sink] == "yes") {
+    print -vol[_sink]
+  } else {
+    print vol[_sink]
+  }
+}
+
+$1 == "Sink"    {
+  gsub("#", "")
+  s = $2
+}
+
 # average left and right speaker
-$1 == "Volume:" { vol = (int($5) + int($12)) / 2 }
-$1 == "Mute:"   { m = $2 }
-# return volume negated if sink is muted
-END             { if (m == "yes") { vol = -vol }
-                      print vol }
+$1 == "Volume:" { vol[s] = (int($5) + int($12)) / 2 }
+$1 == "Mute:"   { mute[s] = $2 }
+
+END {
+  if (sink in vol) {
+    print_volume(sink)
+  } else {
+    for (s in vol) { any_sink = s }
+    if (any_sink) {
+      print_volume(any_sink)
+    } else {
+      print "No Sink"
+    }
+  }
+}
