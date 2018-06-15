@@ -463,9 +463,7 @@ if dbus then
                     local from_conky_iter = string.gmatch(conky_update, all_but_delim)
                     for i, update_func in ipairs(updater) do
                         local update = from_conky_iter()
-                        if update == '' then
-                            updater.eject(i, 'Conky returned empty string')
-                        end
+
                         local success, err = pcall(update_func, update)
                         if not success then
                             if type(err) == 'string' then
